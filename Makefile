@@ -44,7 +44,7 @@ declare-verifier:
 	cd contracts && sncast declare --contract-name UltraKeccakHonkVerifier
 
 deploy-verifier:
-	cd contracts && sncast deploy --class-hash 0x0209f77b619e9861001398617b39a0a652e6bf3d874036448e108794a87e3641
+	cd contracts && sncast deploy --class-hash 0x065810e6858268556a5e6ac4d2e83cf35893c044db9ebfa308ed5e5d4cb58a61
 
 artifacts:
 	cp ./circuit/target/circuit.json ./app/src/assets/circuit.json

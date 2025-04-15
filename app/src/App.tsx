@@ -4,7 +4,7 @@ import { ProofState, ProofStateData } from './types'
 import { Noir } from "@noir-lang/noir_js";
 import { UltraHonkBackend, reconstructHonkProof } from "@aztec/bb.js";
 import { flattenFieldsAsArray } from "./helpers/proof";
-import { getHonkCallData, parseHonkProofFromBytes, parseHonkVerifyingKeyFromBytes, init } from 'garaga';
+import { getHonkCallData, parseHonkProofFromBytes, parseHonkVerifyingKeyFromBytes, init, poseidonHashBN254 } from 'garaga';
 import { bytecode, abi } from "./assets/circuit.json";
 import { abi as verifierAbi } from "./assets/verifier.json";
 import vkUrl from './assets/vk.bin?url';
@@ -19,10 +19,10 @@ function App() {
     state: ProofState.Initial
   });
   const [vk, setVk] = useState<Uint8Array | null>(null);
-  const [inputX, setInputX] = useState<number>(5);
-  const [inputY, setInputY] = useState<number>(10);
   // Use a ref to reliably track the current state across asynchronous operations
   const currentStateRef = useRef<ProofState>(ProofState.Initial);
+  const [secretKey, setSecretKey] = useState<number>(5);
+  const [inputValue, setInputValue] = useState<number>(10);
 
   // Initialize WASM on component mount
   useEffect(() => {
@@ -93,12 +93,19 @@ function App() {
       // Start the process
       updateState(ProofState.GeneratingWitness);
       
+      await init();
+
       // Use input values from state
-      const input = { x: inputX, y: inputY };
-      
+      const inputs = {
+        secret_key: secretKey,
+        input: inputValue,
+        public_key: poseidonHashBN254(BigInt(secretKey), BigInt(secretKey)).toString(),
+        nullifier: poseidonHashBN254(BigInt(secretKey), BigInt(inputValue)).toString()
+      };
+
       // Generate witness
       let noir = new Noir({ bytecode, abi: abi as any });
-      let execResult = await noir.execute(input);
+      let execResult = await noir.execute(inputs);
       console.log(execResult);
       
       // Generate proof
@@ -112,7 +119,6 @@ function App() {
       // Prepare calldata
       updateState(ProofState.PreparingCalldata);
 
-      await init();
       const rawProof = reconstructHonkProof(flattenFieldsAsArray(proof.publicInputs), proof.proof);
       const honkProof = parseHonkProofFromBytes(rawProof);
       const honkVk = parseHonkVerifyingKeyFromBytes(vk as Uint8Array);
@@ -130,7 +136,7 @@ function App() {
       updateState(ProofState.SendingTransaction);
 
       const provider = new RpcProvider({ nodeUrl: 'http://127.0.0.1:5050/rpc' });
-      const contractAddress = '0x05786c8e655a4b1ec5ad541ff167d1cd164198e56bbf7f0fc9b9c2cde9324efc';
+      const contractAddress = '0x0707ee897e327a10bec57ff8e70c9c199ec1f6629e7d8827f69f5944f4e96ca3';
       const verifierContract = new Contract(verifierAbi, contractAddress, provider);
       
       // Check verification
@@ -188,28 +194,24 @@ function App() {
       <div className="state-machine">
         <div className="input-section">
           <div className="input-group">
-            <label htmlFor="input-x">X:</label>
+            <label htmlFor="secret-key">Secret Key:</label>
             <input 
-              id="input-x"
+              id="secret-key"
               type="text" 
-              value={inputX} 
-              onChange={(e) => {
-                const value = parseInt(e.target.value);
-                setInputX(isNaN(value) ? 0 : value);
-              }} 
+              value={secretKey} 
+              onChange={(e) => setSecretKey(parseInt(e.target.value) || 0)} 
+              min="0"
               disabled={proofState.state !== ProofState.Initial}
             />
           </div>
           <div className="input-group">
-            <label htmlFor="input-y">Y:</label>
+            <label htmlFor="input-value">Input:</label>
             <input 
-              id="input-y"
+              id="input-value"
               type="text" 
-              value={inputY} 
-              onChange={(e) => {
-                const value = parseInt(e.target.value);
-                setInputY(isNaN(value) ? 0 : value);
-              }} 
+              value={inputValue} 
+              onChange={(e) => setInputValue(parseInt(e.target.value) || 0)} 
+              min="0"
               disabled={proofState.state !== ProofState.Initial}
             />
           </div>
