@@ -37,19 +37,22 @@ gen-vk:
 gen-verifier:
 	cd contracts && garaga gen --system ultra_keccak_honk --vk ../circuit/target/vk --project-name verifier
 
-build-verifier:
-	cd contracts/verifier && scarb build
+build-contracts:
+	cd contracts && scarb build
 
 declare-verifier:
-	cd contracts && sncast declare --contract-name UltraKeccakHonkVerifier
+	cd contracts && sncast declare --package verifier --contract-name UltraKeccakHonkVerifier
 
-deploy-verifier:
-	cd contracts && sncast deploy --class-hash 0x065810e6858268556a5e6ac4d2e83cf35893c044db9ebfa308ed5e5d4cb58a61
+declare-main:
+	cd contracts && sncast declare --package main --contract-name MainContract
+
+deploy-main:
+	cd contracts && sncast deploy --class-hash 0x06afc72e2da04da90dbf4030f74023f4445e1371eb46066294961e07993e825c --arguments 217234377348884654691879377518794323857294947151490278790710809376325639809
 
 artifacts:
 	cp ./circuit/target/circuit.json ./app/src/assets/circuit.json
 	cp ./circuit/target/vk ./app/src/assets/vk.bin
-	cp ./contracts/target/release/verifier_UltraKeccakHonkVerifier.contract_class.json ./app/src/assets/verifier.json
+	cp ./contracts/target/release/main_MainContract.contract_class.json ./app/src/assets/main.json
 
 run-app:
 	cd app && bun run dev

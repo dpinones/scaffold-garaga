@@ -6,9 +6,9 @@ import { UltraHonkBackend, reconstructHonkProof } from "@aztec/bb.js";
 import { flattenFieldsAsArray } from "./helpers/proof";
 import { getHonkCallData, parseHonkProofFromBytes, parseHonkVerifyingKeyFromBytes, init, poseidonHashBN254 } from 'garaga';
 import { bytecode, abi } from "./assets/circuit.json";
-import { abi as verifierAbi } from "./assets/verifier.json";
+import { abi as mainAbi } from "./assets/main.json";
 import vkUrl from './assets/vk.bin?url';
-import { RpcProvider, Contract } from 'starknet';
+import { RpcProvider, Contract, Account, constants } from 'starknet';
 import initNoirC from "@noir-lang/noirc_abi";
 import initACVM from "@noir-lang/acvm_js";
 import acvm from "@noir-lang/acvm_js/web/acvm_js_bg.wasm?url";
@@ -21,8 +21,8 @@ function App() {
   const [vk, setVk] = useState<Uint8Array | null>(null);
   // Use a ref to reliably track the current state across asynchronous operations
   const currentStateRef = useRef<ProofState>(ProofState.Initial);
-  const [secretKey, setSecretKey] = useState<number>(5);
-  const [inputValue, setInputValue] = useState<number>(10);
+  const [secretKey, setSecretKey] = useState<number>(1);
+  const [inputValue, setInputValue] = useState<number>(9);
 
   // Initialize WASM on component mount
   useEffect(() => {
@@ -132,15 +132,31 @@ function App() {
       // Connect wallet
       updateState(ProofState.ConnectingWallet);
 
+      const provider = new RpcProvider({ nodeUrl: 'http://127.0.0.1:5050/rpc' });
+
+      // initialize existing pre-deployed account 0 of Devnet
+      const privateKey = '0x71d7bb07b9a64f6f78ac4c816aff4da9';
+      const accountAddress = '0x64b48806902a367c8598f4f95c305e8c1a1acba5f082d294a43793113115691';
+
+      const account = new Account(
+        provider,
+        accountAddress,
+        privateKey,
+        undefined,
+        constants.TRANSACTION_VERSION.V3
+      );
+
       // Send transaction
       updateState(ProofState.SendingTransaction);
 
-      const provider = new RpcProvider({ nodeUrl: 'http://127.0.0.1:5050/rpc' });
-      const contractAddress = '0x0707ee897e327a10bec57ff8e70c9c199ec1f6629e7d8827f69f5944f4e96ca3';
-      const verifierContract = new Contract(verifierAbi, contractAddress, provider);
+      const contractAddress = '0x0670f5b5c83aa741ab6186b7ac94cbb5d60ff6e3d7e6534e4205e7a977ca6e94';
+      const mainContract = new Contract(mainAbi, contractAddress, provider);
+
+      mainContract.connect(account);
       
       // Check verification
-      const res = await verifierContract.verify_ultra_keccak_honk_proof(callData.slice(1));
+      const res = await mainContract.add_solution(callData); // keep the number of elements to pass to the verifier library call
+      await provider.waitForTransaction(res.transaction_hash);
       console.log(res);
 
       updateState(ProofState.ProofVerified);
