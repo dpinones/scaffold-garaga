@@ -8,7 +8,7 @@ import { getHonkCallData, parseHonkProofFromBytes, parseHonkVerifyingKeyFromByte
 import { bytecode, abi } from "./assets/circuit.json";
 import { abi as mainAbi } from "./assets/main.json";
 import vkUrl from './assets/vk.bin?url';
-import { RpcProvider, Contract, Account, constants, WalletAccount, wallet } from 'starknet';
+import { RpcProvider, Contract, WalletAccount } from 'starknet';
 import { connect } from "@starknet-io/get-starknet"
 import initNoirC from "@noir-lang/noirc_abi";
 import initACVM from "@noir-lang/acvm_js";
