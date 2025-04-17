@@ -133,7 +133,7 @@ function App() {
       // Connect wallet
       updateState(ProofState.ConnectingWallet);
 
-      const provider = new RpcProvider({ nodeUrl: 'https://free-rpc.nethermind.io/sepolia-juno/v0_8' })
+      const provider = new RpcProvider({ nodeUrl: 'https://api.cartridge.gg/x/starknet/mainnet' })
 
       const selectedWalletSWO = await connect();
       if (!selectedWalletSWO) {
@@ -147,7 +147,7 @@ function App() {
       // Send transaction
       updateState(ProofState.SendingTransaction);
 
-      const contractAddress = '0x0694b397b46ed504f3a24a513e1e34cb28eecb8d317c28a3039cae4d05f255d3';
+      const contractAddress = '0x0774996d0d13c57c87c68e4ba4cfcd50204a222f183ada14fc1c50957530072c';
       const mainContract = new Contract(mainAbi, contractAddress, myWalletAccount);
 
       console.log(mainContract);
@@ -247,7 +247,7 @@ function App() {
 
       {proofState.state === ProofState.ProofVerified && (
         <div className="success-message">
-          Proof verified successfully! <a href={`https://sepolia.starkscan.co/tx/${transactionHash}`} target="_blank" rel="noopener noreferrer">View on explorer</a>
+          Proof verified successfully! <a href={`https://starkscan.co/tx/${transactionHash}`} target="_blank" rel="noopener noreferrer">View on explorer</a>
         </div>
       )}
       
