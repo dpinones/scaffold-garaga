@@ -229,6 +229,7 @@ function App() {
               disabled={proofState.state !== ProofState.Initial}
             />
           </div>
+          <p className="input-hint">Note: X should be different from Y.</p>
         </div>
         
         {renderStateIndicator(ProofState.GeneratingWitness, proofState.state)}
