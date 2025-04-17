@@ -10,18 +10,12 @@ mod MainContract {
     };
     use starknet::{syscalls, SyscallResultTrait};
 
-    const VERIFIER_CLASSHASH: felt252 = 0x065810e6858268556a5e6ac4d2e83cf35893c044db9ebfa308ed5e5d4cb58a61;
+    const VERIFIER_CLASSHASH: felt252 = 0x079666cdb4fc3cbcafbd74f4ea4e2855bf455c5a7c70915f5679325c54032771;
 
     #[storage]
     struct Storage {
         // Don't do that for a real use case, use merkle tree instead
         nullifiers: Map<u256, bool>,
-        public_key: u256,
-    }
-
-    #[constructor]
-    fn constructor(ref self: ContractState, public_key: u256) {
-        self.public_key.write(public_key);
     }
 
     #[abi(embed_v0)]
@@ -35,10 +29,8 @@ mod MainContract {
                 .unwrap_syscall();
             let public_inputs = Serde::<Option<Span<u256>>>::deserialize(ref res).unwrap().expect('Proof is invalid');
 
-            let public_key = *public_inputs[0];
-            let nullifier = *public_inputs[1];
+            let nullifier = *public_inputs[0];
 
-            assert(self.public_key.read() == public_key, 'Public key does not match');
             assert(self.nullifiers.entry(nullifier).read() == false, 'Nullifier already used');
 
             self.nullifiers.entry(nullifier).write(true);

@@ -20,10 +20,11 @@ function App() {
     state: ProofState.Initial
   });
   const [vk, setVk] = useState<Uint8Array | null>(null);
+  const [inputX, setInputX] = useState<number>(6);
+  const [inputY, setInputY] = useState<number>(3);
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
   // Use a ref to reliably track the current state across asynchronous operations
   const currentStateRef = useRef<ProofState>(ProofState.Initial);
-  const [secretKey, setSecretKey] = useState<number>(1);
-  const [inputValue, setInputValue] = useState<number>(9);
 
   // Initialize WASM on component mount
   useEffect(() => {
@@ -54,7 +55,7 @@ function App() {
 
   const resetState = () => {
     currentStateRef.current = ProofState.Initial;
-    setProofState({ 
+    setProofState({
       state: ProofState.Initial,
       error: undefined 
     });
@@ -98,10 +99,9 @@ function App() {
 
       // Use input values from state
       const inputs = {
-        secret_key: secretKey,
-        input: inputValue,
-        public_key: poseidonHashBN254(BigInt(secretKey), BigInt(secretKey)).toString(),
-        nullifier: poseidonHashBN254(BigInt(secretKey), BigInt(inputValue)).toString()
+        x: inputX,
+        y: inputY,
+        nullifier: poseidonHashBN254(BigInt(inputX), BigInt(inputY)).toString()
       };
 
       // Generate witness
@@ -147,14 +147,16 @@ function App() {
       // Send transaction
       updateState(ProofState.SendingTransaction);
 
-      const contractAddress = '0x057b6efdccdebe6288d1bbc90a31ee52dfd1479ec4422f90c3e40c8054062a44';
+      const contractAddress = '0x0694b397b46ed504f3a24a513e1e34cb28eecb8d317c28a3039cae4d05f255d3';
       const mainContract = new Contract(mainAbi, contractAddress, myWalletAccount);
+
+      console.log(mainContract);
 
       // Check verification
       const res = await mainContract.add_solution(callData); // keep the number of elements to pass to the verifier library call
       await provider.waitForTransaction(res.transaction_hash);
-      console.log(res);
-
+      console.log("Transaction hash:", res.transaction_hash);
+      setTransactionHash(res.transaction_hash);
       updateState(ProofState.ProofVerified);
     } catch (error) {
       handleError(error);
@@ -206,23 +208,23 @@ function App() {
       <div className="state-machine">
         <div className="input-section">
           <div className="input-group">
-            <label htmlFor="secret-key">Secret Key:</label>
+            <label htmlFor="input-x">X:</label>
             <input 
-              id="secret-key"
+              id="input-x"
               type="text" 
-              value={secretKey} 
-              onChange={(e) => setSecretKey(parseInt(e.target.value) || 0)} 
+              value={inputX} 
+              onChange={(e) => setInputX(parseInt(e.target.value) || 0)} 
               min="0"
               disabled={proofState.state !== ProofState.Initial}
             />
           </div>
           <div className="input-group">
-            <label htmlFor="input-value">Input:</label>
+            <label htmlFor="input-y">Y:</label>
             <input 
-              id="input-value"
+              id="input-y"
               type="text" 
-              value={inputValue} 
-              onChange={(e) => setInputValue(parseInt(e.target.value) || 0)} 
+              value={inputY} 
+              onChange={(e) => setInputY(parseInt(e.target.value) || 0)} 
               min="0"
               disabled={proofState.state !== ProofState.Initial}
             />
@@ -239,6 +241,12 @@ function App() {
       {proofState.error && (
         <div className="error-message">
           Error at stage '{proofState.state}': {proofState.error}
+        </div>
+      )}
+
+      {proofState.state === ProofState.ProofVerified && (
+        <div className="success-message">
+          Proof verified successfully! <a href={`https://sepolia.starkscan.co/tx/${transactionHash}`} target="_blank" rel="noopener noreferrer">View on explorer</a>
         </div>
       )}
       

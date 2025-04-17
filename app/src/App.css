@@ -101,6 +101,17 @@ h1 {
   text-align: left;
 }
 
+.success-message {
+  padding: 1rem;
+  background-color: rgba(47, 211, 47, 0.1);
+  border: 1px solid #4caf50;
+  border-radius: 8px;
+  color: #4caf50;
+  font-size: 0.9rem;
+  width: 100%;
+  text-align: left;
+}
+
 .controls {
   display: flex;
   gap: 1rem;
